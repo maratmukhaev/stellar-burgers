@@ -17,11 +17,23 @@ import {
 
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { ProtectedRoute } from '../protected-route/protected-route';
+import { useEffect } from 'react';
+import { useDispatch } from '../../services/store';
+import { getIngredients } from '../../services/slices/ingredientsSlice';
+import { getUser } from '../../services/slices/userSlice';
+import { getFeed } from '../../services/slices/feedSlice';
 
 const App = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state as { backgroundLocation?: Location };
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(getUser());
+    dispatch(getIngredients());
+    dispatch(getFeed());
+  }, [dispatch]);
 
   const handleCloseModal = () => {
     navigate(-1);

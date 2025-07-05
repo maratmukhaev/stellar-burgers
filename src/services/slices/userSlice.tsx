@@ -8,68 +8,83 @@ import {
   loginUserApi,
   logoutApi,
   getUserApi,
-  updateUserApi
+  updateUserApi,
+  TServerResponse,
+  forgotPasswordApi,
+  resetPasswordApi
 } from '../../utils/burger-api';
-import { TUser, RequestStatus } from '@utils-types';
-import { setCookie, deleteCookie } from 'src/utils/cookie';
+import { TUser, TUserReset } from '@utils-types';
+import { setCookie, deleteCookie } from '../../utils/cookie';
 import { RootState } from '../store';
 
 export const registerUser = createAsyncThunk<TAuthResponse, TRegisterData>(
   'user/registerUser',
-  async (userData) => {
-    const data = await registerUserApi(userData);
-    setCookie('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
-    return data;
+  async (data) => {
+    const userData = await registerUserApi(data);
+    localStorage.setItem('refreshToken', userData.refreshToken);
+    return userData;
   }
 );
 
 export const loginUser = createAsyncThunk<TAuthResponse, TLoginData>(
   'user/loginUser',
-  async (userData) => {
-    const data = await loginUserApi(userData);
-    setCookie('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
-    return data;
+  async (data) => {
+    const userData = await loginUserApi(data);
+    localStorage.setItem('refreshToken', userData.refreshToken);
+    return userData;
   }
 );
 
-export const getUser = createAsyncThunk<{ user: TUser }>(
+export const getUser = createAsyncThunk<TUserResponse>(
   `user/getUser`,
   async () => {
-    const data = await getUserApi();
-    return data;
+    const userData = await getUserApi();
+    return userData;
   }
 );
 
 export const updateUser = createAsyncThunk<
   TUserResponse,
   Partial<TRegisterData>
->(`user/updateUser`, async (userData) => {
-  const data = await updateUserApi(userData);
-  return data;
+>(`user/updateUser`, async (data) => {
+  const userData = await updateUserApi(data);
+  return userData;
 });
 
-export const logoutUser = createAsyncThunk<{ success: boolean }>(
+export const logoutUser = createAsyncThunk<TServerResponse<{}>>(
   `user/logoutUser`,
   async () => {
-    const data = await logoutApi();
-    deleteCookie('accessToken');
-    localStorage.removeItem('refreshToken');
-    return data;
+    const userData = await logoutApi();
+    return userData;
+  }
+);
+
+export const forgotPassword = createAsyncThunk<
+  TServerResponse<{}>,
+  Pick<TLoginData, 'email'>
+>(`user/forgotPassword`, async (data) => {
+  const userData = await forgotPasswordApi(data);
+  return userData;
+});
+
+export const resetPassword = createAsyncThunk<TServerResponse<{}>, TUserReset>(
+  `user/resetPassword`,
+  async (data) => {
+    const userData = await resetPasswordApi(data);
+    return userData;
   }
 );
 
 export interface UserState {
-  data: TUser | null;
-  requestStatus: RequestStatus;
+  user: TUser | null;
   isAuthCheck: boolean;
+  error: string | null;
 }
 
 export const initialState: UserState = {
-  data: null,
-  requestStatus: RequestStatus.IDLE,
-  isAuthCheck: false
+  user: null,
+  isAuthCheck: false,
+  error: null
 };
 
 export const userSlice = createSlice({
@@ -79,76 +94,105 @@ export const userSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(registerUser.pending, (state) => {
-        state.isAuthCheck = true;
-        state.requestStatus = RequestStatus.LOADING;
+        state.isAuthCheck = false;
+        state.error = null;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
-        state.data = action.payload.user;
-        state.isAuthCheck = false;
-        state.requestStatus = RequestStatus.SUCCESS;
+        state.isAuthCheck = true;
+        state.user = action.payload.user;
+        setCookie('accessToken', action.payload.accessToken);
+        state.error = null;
       })
-      .addCase(registerUser.rejected, (state) => {
-        state.isAuthCheck = false;
-        state.requestStatus = RequestStatus.FAILED;
+      .addCase(registerUser.rejected, (state, action) => {
+        state.isAuthCheck = true;
+        state.error =
+          action.error.message || 'Не удалось зарегистрировать пользователя';
       })
       .addCase(loginUser.pending, (state) => {
-        state.isAuthCheck = true;
-        state.requestStatus = RequestStatus.LOADING;
+        state.isAuthCheck = false;
+        state.error = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
-        state.data = action.payload.user;
-        state.isAuthCheck = false;
-        state.requestStatus = RequestStatus.SUCCESS;
+        state.isAuthCheck = true;
+        state.user = action.payload.user;
+        setCookie('accessToken', action.payload.accessToken);
+        state.error = null;
       })
-      .addCase(loginUser.rejected, (state) => {
-        state.isAuthCheck = false;
-        state.requestStatus = RequestStatus.FAILED;
+      .addCase(loginUser.rejected, (state, action) => {
+        state.isAuthCheck = true;
+        state.error = action.error.message || 'Не удалось авторизоваться';
       })
       .addCase(getUser.pending, (state) => {
-        state.isAuthCheck = true;
-        state.requestStatus = RequestStatus.LOADING;
+        state.isAuthCheck = false;
+        state.error = null;
       })
       .addCase(getUser.fulfilled, (state, action) => {
-        state.data = action.payload.user;
-        state.isAuthCheck = false;
-        state.requestStatus = RequestStatus.SUCCESS;
+        state.isAuthCheck = true;
+        state.user = action.payload.user;
+        state.error = null;
       })
-      .addCase(getUser.rejected, (state) => {
-        state.isAuthCheck = false;
-        state.requestStatus = RequestStatus.FAILED;
+      .addCase(getUser.rejected, (state, action) => {
+        state.isAuthCheck = true;
+        state.error = action.error.message || 'Не удалось найти пользователя';
       })
       .addCase(updateUser.pending, (state) => {
-        state.isAuthCheck = true;
-        state.requestStatus = RequestStatus.LOADING;
+        state.isAuthCheck = false;
+        state.error = null;
       })
       .addCase(updateUser.fulfilled, (state, action) => {
-        state.data = action.payload.user;
-        state.isAuthCheck = false;
-        state.requestStatus = RequestStatus.SUCCESS;
+        state.isAuthCheck = true;
+        state.user = action.payload.user;
+        state.error = null;
       })
-      .addCase(updateUser.rejected, (state) => {
-        state.isAuthCheck = false;
-        state.requestStatus = RequestStatus.FAILED;
+      .addCase(updateUser.rejected, (state, action) => {
+        state.isAuthCheck = true;
+        state.error =
+          action.error.message || 'Не удалось обновить данные пользователя';
       })
       .addCase(logoutUser.pending, (state) => {
-        state.isAuthCheck = true;
-        state.requestStatus = RequestStatus.LOADING;
+        state.isAuthCheck = false;
+        state.error = null;
       })
       .addCase(logoutUser.fulfilled, (state) => {
-        state.data = null;
-        state.isAuthCheck = false;
-        state.requestStatus = RequestStatus.SUCCESS;
+        state.isAuthCheck = true;
+        state.user = null;
+        localStorage.removeItem('refreshToken');
+        deleteCookie('accessToken');
+        state.error = null;
       })
-      .addCase(logoutUser.rejected, (state) => {
+      .addCase(logoutUser.rejected, (state, action) => {
+        state.isAuthCheck = true;
+        state.error = action.error.message || 'Не удалось разлогиниться';
+      })
+      .addCase(forgotPassword.pending, (state) => {
         state.isAuthCheck = false;
-        state.requestStatus = RequestStatus.FAILED;
+        state.error = null;
+      })
+      .addCase(forgotPassword.fulfilled, (state) => {
+        state.isAuthCheck = true;
+        state.error = null;
+      })
+      .addCase(forgotPassword.rejected, (state, action) => {
+        state.isAuthCheck = true;
+        state.error = action.error.message || 'Не удалось восстановить пароль';
+      })
+      .addCase(resetPassword.pending, (state) => {
+        state.isAuthCheck = false;
+        state.error = null;
+      })
+      .addCase(resetPassword.fulfilled, (state) => {
+        state.isAuthCheck = true;
+        state.error = null;
+      })
+      .addCase(resetPassword.rejected, (state, action) => {
+        state.isAuthCheck = true;
+        state.error = action.error.message || 'Не удалось сбросить пароль';
       });
   }
 });
 
-export const dataUserSelector = (state: RootState) => state.user.data;
+export const userSelector = (state: RootState) => state.user.user;
 export const isAuthCheckSelector = (state: RootState) => state.user.isAuthCheck;
-export const requestStatusSelector = (state: RootState) =>
-  state.user.requestStatus;
+export const errorSelector = (state: RootState) => state.user.error;
 
 export default userSlice.reducer;
