@@ -37,4 +37,9 @@ export type TUser = {
   name: string;
 };
 
+export type TUserReset = {
+  password: string;
+  token: string;
+};
+
 export type TTabMode = 'bun' | 'sauce' | 'main';
