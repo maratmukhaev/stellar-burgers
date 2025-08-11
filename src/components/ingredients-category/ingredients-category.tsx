@@ -8,7 +8,7 @@ import { ingredientsSelector } from '../../services/slices/burgerConstructorSlic
 export const IngredientsCategory = forwardRef<
   HTMLUListElement,
   TIngredientsCategoryProps
->(({ title, titleRef, ingredients }, ref) => {
+>(({ title, titleRef, ingredients, ...rest }, ref) => {
   /** TODO: взять переменную из стора */
   const burgerConstructorIngredients = useSelector(ingredientsSelector);
 
@@ -37,6 +37,7 @@ export const IngredientsCategory = forwardRef<
       ingredients={ingredients}
       ingredientsCounters={ingredientsCounters}
       ref={ref}
+      {...rest}
     />
   );
 });
