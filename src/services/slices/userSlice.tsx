@@ -21,6 +21,7 @@ export const registerUser = createAsyncThunk<TAuthResponse, TRegisterData>(
   'user/registerUser',
   async (data) => {
     const userData = await registerUserApi(data);
+    setCookie('accessToken', userData.accessToken);
     localStorage.setItem('refreshToken', userData.refreshToken);
     return userData;
   }
@@ -30,6 +31,7 @@ export const loginUser = createAsyncThunk<TAuthResponse, TLoginData>(
   'user/loginUser',
   async (data) => {
     const userData = await loginUserApi(data);
+    setCookie('accessToken', userData.accessToken);
     localStorage.setItem('refreshToken', userData.refreshToken);
     return userData;
   }
@@ -55,6 +57,8 @@ export const logoutUser = createAsyncThunk<TServerResponse<{}>>(
   `user/logoutUser`,
   async () => {
     const userData = await logoutApi();
+    deleteCookie('accessToken');
+    localStorage.removeItem('refreshToken');
     return userData;
   }
 );
@@ -100,7 +104,6 @@ export const userSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, action) => {
         state.isAuthCheck = true;
         state.user = action.payload.user;
-        setCookie('accessToken', action.payload.accessToken);
         state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {
@@ -115,7 +118,6 @@ export const userSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isAuthCheck = true;
         state.user = action.payload.user;
-        setCookie('accessToken', action.payload.accessToken);
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
@@ -156,8 +158,6 @@ export const userSlice = createSlice({
       .addCase(logoutUser.fulfilled, (state) => {
         state.isAuthCheck = true;
         state.user = null;
-        localStorage.removeItem('refreshToken');
-        deleteCookie('accessToken');
         state.error = null;
       })
       .addCase(logoutUser.rejected, (state, action) => {

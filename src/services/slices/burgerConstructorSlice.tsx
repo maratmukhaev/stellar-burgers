@@ -11,7 +11,7 @@ export const orderBurger = createAsyncThunk<TNewOrderResponse, string[]>(
   }
 );
 
-interface BurgerConstructorState {
+export interface BurgerConstructorState {
   ingredients: TConstructorIngredient[];
   loading: boolean;
   error: string | null;
