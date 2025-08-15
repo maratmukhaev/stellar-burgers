@@ -11,7 +11,7 @@ export const getIngredients = createAsyncThunk<TIngredient[]>(
   }
 );
 
-interface IngredientsState {
+export interface IngredientsState {
   ingredients: TIngredient[];
   loading: boolean;
   error: string | null;

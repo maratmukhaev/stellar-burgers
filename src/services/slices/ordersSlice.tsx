@@ -23,7 +23,7 @@ export const getOrderByNumber = createAsyncThunk<TOrderResponse, number>(
   }
 );
 
-interface OrdersState {
+export interface OrdersState {
   orders: TOrder[];
   orderInfo: TOrder | null;
   loading: boolean;

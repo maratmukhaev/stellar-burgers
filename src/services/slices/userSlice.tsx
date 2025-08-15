@@ -98,6 +98,7 @@ export const userSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(registerUser.pending, (state) => {
+        state.user = null;
         state.isAuthCheck = false;
         state.error = null;
       })
@@ -108,10 +109,12 @@ export const userSlice = createSlice({
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.isAuthCheck = true;
+        state.user = null;
         state.error =
           action.error.message || 'Не удалось зарегистрировать пользователя';
       })
       .addCase(loginUser.pending, (state) => {
+        state.user = null;
         state.isAuthCheck = false;
         state.error = null;
       })
@@ -122,6 +125,7 @@ export const userSlice = createSlice({
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isAuthCheck = true;
+        state.user = null;
         state.error = action.error.message || 'Не удалось авторизоваться';
       })
       .addCase(getUser.pending, (state) => {
@@ -135,7 +139,9 @@ export const userSlice = createSlice({
       })
       .addCase(getUser.rejected, (state, action) => {
         state.isAuthCheck = true;
-        state.error = action.error.message || 'Не удалось найти пользователя';
+        state.error =
+          action.error.message || 'Не удалось получить данные пользователя';
+        state.user = null;
       })
       .addCase(updateUser.pending, (state) => {
         state.isAuthCheck = false;
