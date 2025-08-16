@@ -1,13 +1,23 @@
+const bunIngredientsSelector = '[data-cy=bun-ingredients]';
+const mainsIngredientsSelector = '[data-cy=mains-ingredients]';
+const saucesIngredientsSelector = '[data-cy=sauces-ingredients]';
+const constructorIngredientsSelector = '[data-cy=constructor-ingredients]';
+const constructorSelector = '[data-cy=constructor]';
+const orderNumberSelector = '[data-cy=order-number]';
+const modalSelector = '#modals';
+
 describe('Проверяем добавление ингредиентов в конструктор', () => {
   beforeEach(() => {
     // Настройка перехвата запросов на эндпоинт
     cy.intercept('GET', 'api/ingredients', { fixture: 'ingredients.json' });
     cy.viewport(1300, 800);
-    cy.visit('http://localhost:4000');
+    cy.visit('/');
   });
 
   it('Булка добавляется', () => {
-    cy.get('[data-cy=bun-ingredients]').contains('Добавить').click();
+    cy.get(bunIngredientsSelector).as('bun');
+
+    cy.get('@bun').contains('Добавить').click();
     cy.get('[data-cy=constructor-bun-1]')
       .contains('Булка 1')
       .should('exist');
@@ -17,12 +27,17 @@ describe('Проверяем добавление ингредиентов в к
   });
 
   it('Ингредиенты добавляются', () => {
-    cy.get('[data-cy=mains-ingredients]').contains('Добавить').click();
-    cy.get('[data-cy=sauces-ingredients]').contains('Добавить').click();
-    cy.get('[data-cy=constructor-ingredients]')
+    cy.get(mainsIngredientsSelector).as('mains');
+    cy.get(saucesIngredientsSelector).as('sauces');
+
+    cy.get('@mains').contains('Добавить').click();
+    cy.get('@sauces').contains('Добавить').click();
+
+    cy.get(constructorIngredientsSelector).as('constructorIngredients');
+    cy.get('@constructorIngredients')
       .contains('Начинка 1')
       .should('exist');
-    cy.get('[data-cy=constructor-ingredients]')
+    cy.get('@constructorIngredients')
       .contains('Соус 1')
       .should('exist');
   });
@@ -33,20 +48,20 @@ describe('Проверяем работу модальных окон', () => {
     // Настройка перехвата запросов на эндпоинт
     cy.intercept('GET', 'api/ingredients', { fixture: 'ingredients.json' });
     cy.viewport(1300, 800);
-    cy.visit('http://localhost:4000');
+    cy.visit('/');
   });
 
   it('Модальное окно ингредиента открывается', () => {
     cy.contains('Детали ингредиента').should('not.exist');
     cy.contains('Начинка 9').click();
     cy.contains('Детали ингредиента').should('exist');
-    cy.get('#modals').contains('Начинка 9').should('exist');
+    cy.get(modalSelector).contains('Начинка 9').should('exist');
   });
 
   it('Модальное окно ингредиента закрывается по клику на крестик', () => {
     cy.contains('Начинка 9').click();
     cy.contains('Детали ингредиента').should('exist');
-    cy.get('#modals button').click();
+    cy.get(`${modalSelector} button`).click();
     cy.contains('Детали ингредиента').should('not.exist');
   });
 
@@ -68,7 +83,7 @@ describe('Проверяем создание заказа', () => {
     cy.setCookie('accessToken', 'test-accessToken');
     
     cy.viewport(1300, 800);
-    cy.visit('http://localhost:4000');
+    cy.visit('/');
   });
 
   afterEach(() => {
@@ -77,25 +92,27 @@ describe('Проверяем создание заказа', () => {
   });
 
   it('Бургер заказывается', () => {
-    cy.get('[data-cy=bun-ingredients]').contains('Добавить').click();
-    cy.get('[data-cy=mains-ingredients]').contains('Добавить').click();
-    cy.get('[data-cy=sauces-ingredients]').contains('Добавить').click();
+    cy.get(bunIngredientsSelector).contains('Добавить').click();
+    cy.get(mainsIngredientsSelector).contains('Добавить').click();
+    cy.get(saucesIngredientsSelector).contains('Добавить').click();
     cy.get('[data-cy=order-summ] button').click();
     cy.wait('@postOrder')
       .its('request.body')
       .should('deep.equal', {
         ingredients: ['1', '1', '2', '4']
       });
-    cy.get('[data-cy=order-number]').contains('12345').should('exist');
-    cy.get('#modals button').click();
-    cy.get('[data-cy=order-number]').should('not.exist');
-    cy.get('[data-cy=constructor]')
+    cy.get(orderNumberSelector).as('orderNumber');
+    cy.get('@orderNumber').contains('12345').should('exist');
+    cy.get(`${modalSelector} button`).click();
+    cy.get('@orderNumber').should('not.exist');
+    cy.get(constructorSelector).as('constructor');
+    cy.get('@constructor')
       .contains('Булка 1')
       .should('not.exist');
-    cy.get('[data-cy=constructor]')
+    cy.get('@constructor')
       .contains('Начинка 1')
       .should('not.exist');
-    cy.get('[data-cy=constructor]')
+    cy.get('@constructor')
       .contains('Соус 1')
       .should('not.exist');
   })
