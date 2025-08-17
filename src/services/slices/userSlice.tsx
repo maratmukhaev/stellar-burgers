@@ -21,6 +21,7 @@ export const registerUser = createAsyncThunk<TAuthResponse, TRegisterData>(
   'user/registerUser',
   async (data) => {
     const userData = await registerUserApi(data);
+    setCookie('accessToken', userData.accessToken);
     localStorage.setItem('refreshToken', userData.refreshToken);
     return userData;
   }
@@ -30,6 +31,7 @@ export const loginUser = createAsyncThunk<TAuthResponse, TLoginData>(
   'user/loginUser',
   async (data) => {
     const userData = await loginUserApi(data);
+    setCookie('accessToken', userData.accessToken);
     localStorage.setItem('refreshToken', userData.refreshToken);
     return userData;
   }
@@ -55,6 +57,8 @@ export const logoutUser = createAsyncThunk<TServerResponse<{}>>(
   `user/logoutUser`,
   async () => {
     const userData = await logoutApi();
+    deleteCookie('accessToken');
+    localStorage.removeItem('refreshToken');
     return userData;
   }
 );
@@ -94,32 +98,34 @@ export const userSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(registerUser.pending, (state) => {
+        state.user = null;
         state.isAuthCheck = false;
         state.error = null;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.isAuthCheck = true;
         state.user = action.payload.user;
-        setCookie('accessToken', action.payload.accessToken);
         state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.isAuthCheck = true;
+        state.user = null;
         state.error =
           action.error.message || 'Не удалось зарегистрировать пользователя';
       })
       .addCase(loginUser.pending, (state) => {
+        state.user = null;
         state.isAuthCheck = false;
         state.error = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isAuthCheck = true;
         state.user = action.payload.user;
-        setCookie('accessToken', action.payload.accessToken);
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isAuthCheck = true;
+        state.user = null;
         state.error = action.error.message || 'Не удалось авторизоваться';
       })
       .addCase(getUser.pending, (state) => {
@@ -133,7 +139,9 @@ export const userSlice = createSlice({
       })
       .addCase(getUser.rejected, (state, action) => {
         state.isAuthCheck = true;
-        state.error = action.error.message || 'Не удалось найти пользователя';
+        state.error =
+          action.error.message || 'Не удалось получить данные пользователя';
+        state.user = null;
       })
       .addCase(updateUser.pending, (state) => {
         state.isAuthCheck = false;
@@ -156,8 +164,6 @@ export const userSlice = createSlice({
       .addCase(logoutUser.fulfilled, (state) => {
         state.isAuthCheck = true;
         state.user = null;
-        localStorage.removeItem('refreshToken');
-        deleteCookie('accessToken');
         state.error = null;
       })
       .addCase(logoutUser.rejected, (state, action) => {

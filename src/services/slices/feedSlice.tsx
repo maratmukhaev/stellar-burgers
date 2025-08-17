@@ -11,7 +11,7 @@ export const getFeed = createAsyncThunk<TFeedsResponse>(
   }
 );
 
-interface FeedState {
+export interface FeedState {
   feed: {
     orders: TOrder[];
     total: number | null;
